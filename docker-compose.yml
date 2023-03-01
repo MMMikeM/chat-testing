@@ -1,0 +1,50 @@
+version: '2'
+
+services:
+  api:
+    build:
+      context: .
+      target: api
+    ports:
+      - 3000:3000
+    command: go run cmd/api/main.go
+    volumes:
+      - .:/app
+    networks:
+      - base
+    restart: unless-stopped
+    healthcheck:
+      test: curl --fail http://localhost:3000/health || exit 1
+      interval: 10s
+      retries: 5
+      start_period: 5s
+      timeout: 10s
+
+  load:
+    build:
+      context: .
+      target: base
+    command: go run cmd/loadCreator/main.go
+    volumes:
+      - .:/app
+    depends_on: 
+      - api
+    networks:
+      - base
+
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - 5432
+    volumes:
+      - db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: postgres
+    networks:
+      - base
+
+volumes:
+  db:
+
+networks:
+  base:
