@@ -25,9 +25,11 @@ func NewApp(ctx context.Context) *App {
 	l := logrus.New()
 
 	dsn := "host=pgbouncer user=postgres dbname=messager port=6432 sslmode=disable"
+	//Disable db logging
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
+	// db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		panic("failed to connect database")

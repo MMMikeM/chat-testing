@@ -67,7 +67,7 @@ func main() {
 	nameGenerator := namegenerator.NewNameGenerator(seed)
 	connections = map[string]*websocket.Conn{}
 	numOfConversations := 100
-	maxConversations := 250
+	maxConversations := 2000
 	//minNumOfUsersPerConversation := 2
 	//maxNumOfUsersPerConversation := 4
 
@@ -102,7 +102,7 @@ func main() {
 				}
 
 				go startConversation(ctx, i, users)
-				time.Sleep(250 * time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
 				totalNumOfConversations += 1
 			}
 		}

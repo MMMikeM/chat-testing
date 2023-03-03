@@ -32,37 +32,31 @@ services:
     networks:
       - base
 
-  postgresql:
-    image: docker.io/bitnami/postgresql:15
+  postgres:
+    image: postgres:15
     volumes:
-      - db:/bitnami/postgresql
+      - db:/var/lib/postgresql/data
+      - ./postgres.conf:/etc/postgresql.conf
     environment:
-      ALLOW_EMPTY_PASSWORD: yes
+      POSTGRES_PASSWORD: postgres
       POSTGRES_DB: messager
     networks:
       - base
+    command: postgres -c config_file=/etc/postgresql.conf
 
   pgbouncer:
     image: docker.io/bitnami/pgbouncer
     ports:
       - 6432
     environment:
-      POSTGRESQL_HOST: postgresql
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PASSWORD: postgres
       PGBOUNCER_AUTH_TYPE: trust
       PGBOUNCER_DATABASE: messager
     networks:
       - base
     depends_on:
-      - postgresql
-
-  pghero:
-    image: ankane/pghero
-    ports:
-      - 8080:8080
-    environment:
-      DATABASE_URL: postgres://postgres:postgres@postgresql:5432/messager
-    networks:
-      - base
+      - postgres
 
 volumes:
   db:
