@@ -11,6 +11,7 @@ import (
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type App struct {
@@ -21,17 +22,21 @@ type App struct {
 func NewApp(ctx context.Context) *App {
 	a := App{}
 
-	logger := logrus.New()
+	l := logrus.New()
 
-	dsn := "host=postgres user=postgres password=postgres dbname=messager port=5432 sslmode=disable"
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	dsn := "host=pgbouncer user=postgres dbname=messager port=6432 sslmode=disable"
+	//Disable db logging
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
+	// db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		panic("failed to connect database")
 	}
 	a.DB = db
 
-	server := NewServer(ctx, logger, db)
+	server := NewServer(ctx, l, db)
 
 	// Migrate the schema
 	// This wont be done this way in production
@@ -40,9 +45,9 @@ func NewApp(ctx context.Context) *App {
 	db.AutoMigrate(Message{})
 
 	e := echo.New()
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "method=${method}, uri=${uri}, status=${status}\n",
-	}))
+	// e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+	// 	Format: "method=${method}, uri=${uri}, status=${status}\n",
+	// }))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 

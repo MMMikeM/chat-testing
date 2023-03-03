@@ -67,6 +67,7 @@ func main() {
 	nameGenerator := namegenerator.NewNameGenerator(seed)
 	connections = map[string]*websocket.Conn{}
 	numOfConversations := 100
+	maxConversations := 2000
 	//minNumOfUsersPerConversation := 2
 	//maxNumOfUsersPerConversation := 4
 
@@ -85,24 +86,29 @@ func main() {
 		}
 	}()
 
-	for i := 0; i < numOfConversations; i++ {
-		wg.Add(1)
+	totalNumOfConversations := 0
+	for {
+		for i := 0; i < numOfConversations; i++ {
+			if totalNumOfConversations < maxConversations {
+				//numOfUsers := rand.Intn((maxNumOfUsersPerConversation - minNumOfUsersPerConversation)) + minNumOfUsersPerConversation
+				numOfUsers := 2
+				var users []User
+				for j := 1; j < numOfUsers; j++ {
+					u, err := createUser(ctx, nameGenerator.Generate())
+					if err != nil {
+						panic(err)
+					}
+					users = append(users, u)
+				}
 
-		//numOfUsers := rand.Intn((maxNumOfUsersPerConversation - minNumOfUsersPerConversation)) + minNumOfUsersPerConversation
-		numOfUsers := 2
-		var users []User
-		for j := 1; j < numOfUsers; j++ {
-			u, err := createUser(ctx, nameGenerator.Generate())
-			if err != nil {
-				panic(err)
+				go startConversation(ctx, i, users)
+				time.Sleep(10 * time.Millisecond)
+				totalNumOfConversations += 1
 			}
-			users = append(users, u)
 		}
 
-		go startConversation(ctx, i, users)
+		time.Sleep(5 * time.Second)
 	}
-
-	wg.Wait()
 }
 
 func startConversation(ctx context.Context, conversationCount int, users []User) {
@@ -133,7 +139,8 @@ func startConversation(ctx context.Context, conversationCount int, users []User)
 			panic(err)
 		}
 		//fmt.Printf("Num. of Messages: %d\n", len(conversation.Messages))
-		time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
+		// time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
+		time.Sleep(time.Duration(1 * time.Second))
 	}
 }
 

@@ -33,15 +33,30 @@ services:
       - base
 
   postgres:
-    image: postgres:15-alpine
-    ports:
-      - 5432
+    image: postgres:15
     volumes:
       - db:/var/lib/postgresql/data
+      - ./postgres.conf:/etc/postgresql.conf
     environment:
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: messager
     networks:
       - base
+    command: postgres -c config_file=/etc/postgresql.conf
+
+  pgbouncer:
+    image: docker.io/bitnami/pgbouncer
+    ports:
+      - 6432
+    environment:
+      POSTGRESQL_HOST: postgres
+      POSTGRESQL_PASSWORD: postgres
+      PGBOUNCER_AUTH_TYPE: trust
+      PGBOUNCER_DATABASE: messager
+    networks:
+      - base
+    depends_on:
+      - postgres
 
 volumes:
   db:
