@@ -91,13 +91,16 @@ func (s *Server) ws(ctx echo.Context) error {
 			break // Exit the loop if the client tries to close the connection or the connection with the interrupted client
 		}
 
-		msg := Message{}
-		json.Unmarshal(body, &msg)
+		// separate go function for processing messages and unlocking channel
+		go func() {
+			msg := Message{}
+			json.Unmarshal(body, &msg)
 
-		result := s.DB.Create(&msg)
-		if result.Error != nil {
-			s.Logger.Println(result.Error)
-		}
+			result := s.DB.Create(&msg)
+			if result.Error != nil {
+				s.Logger.Println(result.Error)
+			}
+		}()
 	}
 
 	delete(s.WSConnections, ws)
