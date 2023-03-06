@@ -119,7 +119,7 @@ func startConversation(ctx context.Context, conversationCount int, users []User)
 
 	address := "api:3000"
 	for _, user := range users {
-		ws, err := websocket.Dial(fmt.Sprintf("ws://%s/ws", address), "", fmt.Sprintf("http://%s/", address))
+		ws, err := websocket.Dial(fmt.Sprintf("ws://%s/ws?conversation_id=%s", address, conversation.ID), "", fmt.Sprintf("http://%s/", address))
 		if err != nil {
 			fmt.Printf("Dial failed: %s\n", err.Error())
 			os.Exit(1)

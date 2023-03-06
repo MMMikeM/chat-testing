@@ -8,7 +8,7 @@ import (
 )
 
 type Message struct {
-	ID             string    `gorm:"primaryKey"`
+	ID             string    `json:"uuid" gorm:"primaryKey"`
 	From           string    `json:"from_user_id"`
 	CreatedAt      time.Time `json:"created_at"`
 	Body           string    `json:"body"`
@@ -28,10 +28,20 @@ type User struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+	u.ID = uuid.New().String()
+	return
+}
+
 type Conversation struct {
 	gorm.Model
 
 	ID        string    `json:"uuid"`
 	CreatedAt time.Time `json:"created_at"`
 	Messages  []Message `json:"messages"`
+}
+
+func (c *Conversation) BeforeCreate(tx *gorm.DB) (err error) {
+	c.ID = uuid.New().String()
+	return
 }

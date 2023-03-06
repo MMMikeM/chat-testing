@@ -38,7 +38,6 @@ paths:
         - conversation
       summary: Creates a conversation
       operationId: createConversation
-
       responses:
         '200':
           description: Conversation created in JSON format

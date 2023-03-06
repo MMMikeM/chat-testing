@@ -15,13 +15,18 @@ import (
 	"gorm.io/gorm"
 )
 
+type connection struct {
+	conversationID string
+	ws             *websocket.Conn
+}
+
 type Server struct {
 	Logger               *logrus.Logger
 	DB                   *gorm.DB
-	WSConnections        map[*websocket.Conn]bool
+	WSConnections        map[string]map[*websocket.Conn]bool
 	MessagesChannel      chan Message
-	ConnectionChannel    chan *websocket.Conn
-	DisconnectionChannel chan *websocket.Conn
+	ConnectionChannel    chan connection
+	DisconnectionChannel chan connection
 }
 
 var (
@@ -30,13 +35,13 @@ var (
 
 func NewServer(ctx context.Context, logger *logrus.Logger, DB *gorm.DB) *Server {
 	m := make(chan Message)
-	c := make(chan *websocket.Conn)
-	d := make(chan *websocket.Conn)
+	c := make(chan connection)
+	d := make(chan connection)
 
 	s := Server{
 		Logger:               logger,
 		DB:                   DB,
-		WSConnections:        map[*websocket.Conn]bool{},
+		WSConnections:        map[string]map[*websocket.Conn]bool{},
 		MessagesChannel:      m,
 		ConnectionChannel:    c,
 		DisconnectionChannel: d,
@@ -51,18 +56,23 @@ func NewServer(ctx context.Context, logger *logrus.Logger, DB *gorm.DB) *Server 
 
 	go func() {
 		var mutex = &sync.Mutex{}
-		for ws := range s.ConnectionChannel {
-			mutex.Lock()
-			s.WSConnections[ws] = true
-			mutex.Unlock()
+		for connection := range s.ConnectionChannel {
+			go func() {
+				mutex.Lock()
+				if s.WSConnections[connection.conversationID] == nil {
+					s.WSConnections[connection.conversationID] = map[*websocket.Conn]bool{}
+				}
+				s.WSConnections[connection.conversationID][connection.ws] = true
+				mutex.Unlock()
+			}()
 		}
 	}()
 
 	go func() {
 		var mutex = &sync.Mutex{}
-		for ws := range s.DisconnectionChannel {
+		for connection := range s.DisconnectionChannel {
 			mutex.Lock()
-			delete(s.WSConnections, ws)
+			delete(s.WSConnections[connection.conversationID], connection.ws)
 			mutex.Unlock()
 		}
 	}()
@@ -71,7 +81,16 @@ func NewServer(ctx context.Context, logger *logrus.Logger, DB *gorm.DB) *Server 
 	for w := 1; w <= numOfWorkers; w++ {
 		go func(w int) {
 			messageCache := []Message{}
+
 			for msg := range s.MessagesChannel {
+				msg.ID = uuid.New().String()
+				msgString, _ := json.Marshal(msg)
+				for ws := range s.WSConnections[msg.ConversationId] {
+					err := ws.WriteMessage(websocket.TextMessage, msgString)
+					if err != nil {
+						s.Logger.Println(err.Error())
+					}
+				}
 				messageCache = append(messageCache, msg)
 
 				if len(messageCache) > 500 {
@@ -121,11 +140,14 @@ func (s *Server) CreateUser(ctx echo.Context) error {
 }
 
 func (s *Server) ws(ctx echo.Context) error {
+	conversationID := ctx.QueryParam("conversation_id")
+	upgrader.CheckOrigin = func(r *http.Request) bool { return true }
 	ws, err := upgrader.Upgrade(ctx.Response(), ctx.Request(), nil)
 	if err != nil {
 		return err
 	}
-	s.ConnectionChannel <- ws
+	connection := connection{conversationID: conversationID, ws: ws}
+	s.ConnectionChannel <- connection
 
 	// manage a count of connections without disturbing connection performance
 	// var mutex = &sync.Mutex{}
@@ -150,6 +172,7 @@ func (s *Server) ws(ctx echo.Context) error {
 		go func() {
 			msg := Message{}
 			json.Unmarshal(body, &msg)
+
 			s.MessagesChannel <- msg
 		}()
 	}
@@ -160,7 +183,7 @@ func (s *Server) ws(ctx echo.Context) error {
 	// 	mutex.Unlock()
 	// }()
 
-	s.DisconnectionChannel <- ws
+	s.DisconnectionChannel <- connection
 	ws.Close()
 
 	return nil

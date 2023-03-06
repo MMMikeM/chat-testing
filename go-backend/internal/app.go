@@ -50,6 +50,7 @@ func NewApp(ctx context.Context) *App {
 	// }))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
+	e.Use(middleware.CORS())
 
 	e.Static("/docs", "docs")
 	e.GET("/swagger/*", echoSwagger.WrapHandler)
