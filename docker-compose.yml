@@ -11,6 +11,8 @@ services:
     volumes:
       - ./frontend:/app
       - node_modules:/app/node_modules
+    depends_on: 
+      - api
     networks:
       - base
   api:
@@ -24,6 +26,8 @@ services:
       - ./go-backend:/app
     networks:
       - base
+    depends_on: 
+      - pgbouncer
     restart: unless-stopped
     healthcheck:
       test: curl --fail http://localhost:3000/health || exit 1
