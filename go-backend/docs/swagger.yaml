@@ -30,6 +30,56 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/HealthCheck'
+  /api/v1/conversations/{id}:
+    get:
+      security:
+        - BearerAuth: []
+      tags:
+        - conversation
+      summary: Get a conversation
+      operationId: getConversation
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Identifier for a conversation
+      responses:
+        '200':
+          description: Conversation in JSON format
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '404':
+          description: Conversation not found
+  /api/v1/conversations/{id}/messages:
+    get:
+      security:
+        - BearerAuth: []
+      tags:
+        - conversation
+      summary: Get a conversation messages
+      operationId: getConversationMessages
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+          description: Identifier for a conversation
+      responses:
+        '200':
+          description: Conversation in JSON format
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+        '404':
+          description: Conversation not found
   /api/v1/conversations:
     post:
       security:
@@ -38,16 +88,13 @@ paths:
         - conversation
       summary: Creates a conversation
       operationId: createConversation
-
       responses:
         '200':
           description: Conversation created in JSON format
           content:
             application/json:
               schema:
-                type: object
-                items:
-                  $ref: '#/components/schemas/Conversation'
+                $ref: '#/components/schemas/Conversation'
         '500':
           description: Error creating conversation
   /api/v1/users:
@@ -96,17 +143,34 @@ components:
         id:
           type: string
           format: uuid
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/User'
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        from_user_id:
+          type: string
+        created_at:
+          type: string
+          format: datetime
+        body:
+          type: string
+    CreateUserRequestBody:
+      type: object
+      properties:
+        name:
+          type: string
     User:
       type: object
       properties:
         id:
           type: string
           format: uuid
-        name:
-          type: string
-    CreateUserRequestBody:
-      type: object
-      properties:
         name:
           type: string
     ErrBadRequest:
@@ -187,4 +251,3 @@ components:
     BearerAuth:
       type: http
       scheme: bearer
-cheme: bearer

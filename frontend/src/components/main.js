@@ -48,18 +48,22 @@ export const Main = ({ws, userId, conversationId, setConversationId}) => {
   }
 
   if (userId !== null && conversationId !== null) {
-    ws.onmessage = function (event) {
-      let currentMessages = [...messages, JSON.parse(event.data)]
-      if (currentMessages.length > 20) {
-        currentMessages.shift()
-      }
-      setMessages(currentMessages)
-    };
+    if (ws) {
+      ws.onmessage = function (event) {
+        let currentMessages = [...messages, JSON.parse(event.data)]
+        if (currentMessages.length > 20) {
+          currentMessages.shift()
+        }
+        setMessages(currentMessages)
+      };
+    }
 
     const sendMessage = () => {
       if (message.length > 0) {
         let msg = {body: message, from_user_id: userId, conversation_id: conversationId}
-        ws.send(JSON.stringify(msg))
+        if (ws) {
+          ws.send(JSON.stringify(msg))
+        }
         setMessage("")
       }
     }

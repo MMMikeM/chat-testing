@@ -1,17 +1,34 @@
 version: '2'
 
 services:
-  api:
+  frontend:
     build:
-      context: .
-      target: api
+      context: frontend/.
+      target: dev
     ports:
       - 3000:3000
-    command: go run cmd/api/main.go
+    command: npm start
     volumes:
-      - .:/app
+      - ./frontend:/app
+      - node_modules:/app/node_modules
+    depends_on: 
+      - api
     networks:
       - base
+
+  api:
+    build:
+      context: go-backend/.
+      target: api
+    ports:
+      - 3001:3000
+    command: go run cmd/api/main.go
+    volumes:
+      - ./go-backend:/app
+    networks:
+      - base
+    depends_on: 
+      - postgres
     restart: unless-stopped
     healthcheck:
       test: curl --fail http://localhost:3000/health || exit 1
@@ -22,29 +39,32 @@ services:
 
   load:
     build:
-      context: .
+      context: loader/.
       target: base
-    command: go run cmd/loadCreator/main.go
+    command: go run cmd/main.go
     volumes:
-      - .:/app
+      - ./loader:/app
     depends_on: 
       - api
     networks:
       - base
 
   postgres:
-    image: postgres:15-alpine
-    ports:
-      - 5432
-    volumes:
-      - db:/var/lib/postgresql/data
+    image: postgres:15
+    command: postgres -c config_file=/etc/postgresql.conf
     environment:
       POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: chat_app
+      POSTGRES_HOST_AUTH_METHOD: trust
     networks:
       - base
+    volumes:
+      - db:/var/lib/postgresql/data
+      - ./postgresql.conf:/etc/postgresql.conf
 
 volumes:
   db:
+  node_modules:
 
 networks:
   base:

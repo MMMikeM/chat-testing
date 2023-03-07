@@ -3,7 +3,7 @@ package internal
 
 import (
 	"context"
-	"messanger/internal/openapi"
+	openapi "messanger/internal/openapi"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -21,9 +21,17 @@ type App struct {
 func NewApp(ctx context.Context) *App {
 	a := App{}
 
-	logger := logrus.New()
-
-	dsn := "host=postgres user=postgres password=postgres dbname=messager port=5432 sslmode=disable"
+	// dbLogger := logger.New(
+	// 	log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+	// 	logger.Config{
+	// 		SlowThreshold:             time.Second,   // Slow SQL threshold
+	// 		LogLevel:                  logger.Silent, // Log level
+	// 		IgnoreRecordNotFoundError: true,          // Ignore ErrRecordNotFound error for logger
+	// 		Colorful:                  false,         // Disable color
+	// 	},
+	// )
+	dsn := "host=postgres user=postgres password=postgres dbname=chat_app port=5432 sslmode=disable"
+	// db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{Logger: dbLogger})
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
@@ -31,6 +39,7 @@ func NewApp(ctx context.Context) *App {
 	}
 	a.DB = db
 
+	logger := logrus.New()
 	server := NewServer(ctx, logger, db)
 
 	// Migrate the schema
@@ -40,9 +49,9 @@ func NewApp(ctx context.Context) *App {
 	db.AutoMigrate(Message{})
 
 	e := echo.New()
-	e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
-		Format: "method=${method}, uri=${uri}, status=${status}\n",
-	}))
+	// e.Use(middleware.LoggerWithConfig(middleware.LoggerConfig{
+	// 	Format: "method=${method}, uri=${uri}, status=${status}\n",
+	// }))
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 

@@ -9,10 +9,11 @@ import (
 type Message struct {
 	gorm.Model
 
-	From           string    `json:"from_user_id"`
+	UserID         string    `json:"from"`
 	CreatedAt      time.Time `json:"created_at"`
 	Body           string    `json:"body"`
 	ConversationId string    `json:"conversation_id"`
+	User           User      `json:"user" gorm:"foreignKey:UserID"`
 }
 
 type User struct {

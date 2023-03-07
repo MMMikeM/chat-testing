@@ -4,6 +4,10 @@
 package openapi
 
 import (
+	"fmt"
+	"net/http"
+
+	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/labstack/echo/v4"
 )
 
@@ -13,7 +17,8 @@ const (
 
 // Conversation defines model for Conversation.
 type Conversation struct {
-	Id *string `json:"id,omitempty"`
+	Id    *string `json:"id,omitempty"`
+	Users *[]User `json:"users,omitempty"`
 }
 
 // CreateUserRequestBody defines model for CreateUserRequestBody.
@@ -26,6 +31,14 @@ type HealthCheck struct {
 	BuildingDb          *bool   `json:"building_db"`
 	ImdbDataDownloading *bool   `json:"imdb_data_downloading"`
 	Status              *string `json:"status,omitempty"`
+}
+
+// Message defines model for Message.
+type Message struct {
+	Body       *string `json:"body,omitempty"`
+	CreatedAt  *string `json:"created_at,omitempty"`
+	FromUserId *string `json:"from_user_id,omitempty"`
+	Id         *string `json:"id,omitempty"`
 }
 
 // User defines model for User.
@@ -45,6 +58,12 @@ type ServerInterface interface {
 	// Creates a conversation
 	// (POST /api/v1/conversations)
 	CreateConversation(ctx echo.Context) error
+	// Get a conversation
+	// (GET /api/v1/conversations/{id})
+	GetConversation(ctx echo.Context, id string) error
+	// Get a conversation messages
+	// (GET /api/v1/conversations/{id}/messages)
+	GetConversationMessages(ctx echo.Context, id string) error
 	// Creates a user
 	// (POST /api/v1/users)
 	CreateUser(ctx echo.Context) error
@@ -66,6 +85,42 @@ func (w *ServerInterfaceWrapper) CreateConversation(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshalled arguments
 	err = w.Handler.CreateConversation(ctx)
+	return err
+}
+
+// GetConversation converts echo context to params.
+func (w *ServerInterfaceWrapper) GetConversation(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetConversation(ctx, id)
+	return err
+}
+
+// GetConversationMessages converts echo context to params.
+func (w *ServerInterfaceWrapper) GetConversationMessages(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "id" -------------
+	var id string
+
+	err = runtime.BindStyledParameterWithLocation("simple", false, "id", runtime.ParamLocationPath, ctx.Param("id"), &id)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter id: %s", err))
+	}
+
+	ctx.Set(BearerAuthScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.GetConversationMessages(ctx, id)
 	return err
 }
 
@@ -118,6 +173,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.POST(baseURL+"/api/v1/conversations", wrapper.CreateConversation)
+	router.GET(baseURL+"/api/v1/conversations/:id", wrapper.GetConversation)
+	router.GET(baseURL+"/api/v1/conversations/:id/messages", wrapper.GetConversationMessages)
 	router.POST(baseURL+"/api/v1/users", wrapper.CreateUser)
 	router.GET(baseURL+"/health", wrapper.GetHealth)
 

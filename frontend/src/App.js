@@ -21,9 +21,12 @@ const params = new Proxy(new URLSearchParams(window.location.search), {
   get: (searchParams, prop) => searchParams.get(prop),
 });
 
-const ws = new WebSocket(`ws://localhost:3001/ws?conversation_id=${params.conversationId}`);
-ws.onopen = function() {
-  console.log('Connected')
+let ws = null
+if (params.conversationId) {
+  ws = new WebSocket(`ws://localhost:3001/ws?conversationId=${params.conversationId}`);
+  ws.onopen = function() {
+    console.log('Connected')
+  }
 }
 
 function App() {

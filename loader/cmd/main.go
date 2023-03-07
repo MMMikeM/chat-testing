@@ -18,13 +18,23 @@ import (
 	"golang.org/x/net/websocket"
 )
 
+const (
+	NumOfConversations        = 500
+	NumOfUsersPerConversation = 2
+)
+
+type connectionManager struct {
+	conns map[string]*websocket.Conn
+	sync.RWMutex
+}
+
 type User struct {
 	ID   string `json:"uuid"`
 	Name string `json:"name"`
 }
 
 type Message struct {
-	From           string    `json:"from_user_id"`
+	From           string    `json:"from"`
 	CreatedAt      time.Time `json:"created_at"`
 	Body           string    `json:"body"`
 	ConversationId string    `json:"conversation_id"`
@@ -45,8 +55,6 @@ func randSeq(n int) string {
 	return string(b)
 }
 
-var connections map[string]*websocket.Conn
-
 func closeConnections(connections map[string]*websocket.Conn) {
 	for _, conn := range connections {
 		conn.Close()
@@ -59,39 +67,39 @@ func closeCoversations(numOfConversations int, wg *sync.WaitGroup) {
 	}
 }
 
+type loader struct {
+	cm connectionManager
+}
+
 func main() {
 	var wg sync.WaitGroup
 
 	ctx := context.Background()
 	seed := time.Now().UTC().UnixNano()
 	nameGenerator := namegenerator.NewNameGenerator(seed)
-	connections = map[string]*websocket.Conn{}
-	numOfConversations := 100
-	//minNumOfUsersPerConversation := 2
-	//maxNumOfUsersPerConversation := 4
-
 	signalChannel := make(chan os.Signal, 2)
 	signal.Notify(signalChannel, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+
 	go func() {
 		sig := <-signalChannel
 		switch sig {
 		case os.Interrupt:
-			closeConnections(connections)
-			closeCoversations(numOfConversations, &wg)
+			// closeConnections(connections)
+			closeCoversations(NumOfConversations, &wg)
 		case syscall.SIGTERM:
-			closeConnections(connections)
+			// closeConnections(connections)
 		case syscall.SIGQUIT:
-			closeConnections(connections)
+			// closeConnections(connections)
 		}
 	}()
 
-	for i := 0; i < numOfConversations; i++ {
+	l := loader{cm: connectionManager{conns: map[string]*websocket.Conn{}}}
+
+	for i := 0; i < NumOfConversations; i++ {
 		wg.Add(1)
 
-		//numOfUsers := rand.Intn((maxNumOfUsersPerConversation - minNumOfUsersPerConversation)) + minNumOfUsersPerConversation
-		numOfUsers := 2
 		var users []User
-		for j := 1; j < numOfUsers; j++ {
+		for j := 0; j < NumOfUsersPerConversation; j++ {
 			u, err := createUser(ctx, nameGenerator.Generate())
 			if err != nil {
 				panic(err)
@@ -99,41 +107,46 @@ func main() {
 			users = append(users, u)
 		}
 
-		go startConversation(ctx, i, users)
+		go l.startConversation(ctx, i, users)
 	}
 
 	wg.Wait()
 }
 
-func startConversation(ctx context.Context, conversationCount int, users []User) {
+func (l *loader) startConversation(ctx context.Context, conversationCount int, users []User) {
 	conversation, err := createConversation(ctx)
 	if err != nil {
 		panic(err)
 	}
 
+	if conversationCount == 0 {
+		fmt.Println(conversation.ID)
+	}
+
 	address := "api:3000"
 	for _, user := range users {
-		ws, err := websocket.Dial(fmt.Sprintf("ws://%s/ws", address), "", fmt.Sprintf("http://%s/", address))
+		ws, err := websocket.Dial(fmt.Sprintf("ws://%s/ws?conversationId=%s", address, conversation.ID), "", fmt.Sprintf("http://%s/ws?conversationId=%s", address, conversation.ID))
 		if err != nil {
 			fmt.Printf("Dial failed: %s\n", err.Error())
 			os.Exit(1)
 		}
 
-		connections[user.ID] = ws
+		l.cm.Lock()
+		l.cm.conns[user.ID] = ws
+		l.cm.Unlock()
 	}
 
 	for {
 		user := users[rand.Intn(len(users))] // select a user at random based on the number of users in the conversation
 		message := Message{From: user.ID, ConversationId: conversation.ID, Body: randSeq(rand.Intn(100))}
-		//fmt.Printf("(%d) %s: %s\n", conversationCount, user.Name, message.Body)
-		conn := connections[user.ID]
+		conn := l.cm.conns[user.ID]
 		msgJSON, _ := json.Marshal(message)
 		_, err := conn.Write(msgJSON)
 		if err != nil {
-			panic(err)
+			fmt.Printf(err.Error())
 		}
-		//fmt.Printf("Num. of Messages: %d\n", len(conversation.Messages))
-		time.Sleep(time.Duration(rand.Intn(3)) * time.Second)
+
+		time.Sleep(1 * time.Second)
 	}
 }
 
