@@ -3,7 +3,9 @@ import { useParams } from "react-router-dom"
 
 const useWebsocket = () => {
   const { conversationId, userId } = useParams()
-  const [ws, setWs] = useState<WebSocket>()
+  const [ws, setWs] = useState<WebSocket>(
+    () => new WebSocket(`ws://localhost:3001/ws?conversation_id=${conversationId}`)
+  )
 
   useEffect(() => {
     if (!ws || (conversationId && ws?.url.includes(conversationId))) {
@@ -13,8 +15,6 @@ const useWebsocket = () => {
       ws?.close()
     }
   }, [conversationId])
-
-  console.log("ws:", ws)
 
   return { ws, userId, conversationId }
 }
