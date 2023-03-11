@@ -1,8 +1,6 @@
 import { useState } from "react"
 import { Box, Button, Flex, FormControl, Input, Spacer, Text } from "@chakra-ui/react"
-import useWebsocket from "../hooks/useWebsocket"
-import UserForm from "./UserForm"
-import ConversationForm from "./ConversationForm"
+import useWebsocket from "../../../hooks/useWebsocket"
 
 type Messages = {
   id: number
@@ -11,7 +9,7 @@ type Messages = {
   conversation_id: number
 }
 
-export const Main = () => {
+const Main = () => {
   const [messages, setMessages] = useState<Messages[]>([])
   const [messageField, setMessageField] = useState("")
   const { userId, conversationId, ws } = useWebsocket()
@@ -21,10 +19,6 @@ export const Main = () => {
       navigator.clipboard.writeText(conversationId.toString())
     }
   }
-
-  if (!userId) return <UserForm />
-
-  if (!conversationId) return <ConversationForm />
 
   ws.onmessage = (event) => {
     const currentMessages = [...messages, JSON.parse(event.data)]
@@ -81,3 +75,5 @@ export const Main = () => {
     </>
   )
 }
+
+export default Main
