@@ -1,14 +1,20 @@
+import { useEffect, useState } from "react"
 import { useParams } from "react-router-dom"
 
 const useWebsocket = () => {
-  const params = useParams()
-  const conversationId = params.conversationId ? parseInt(params.conversationId) : null
-  const userId = params.userId ? parseInt(params.userId) : null
+  const { conversationId, userId } = useParams()
+  const [ws, setWs] = useState<WebSocket>()
 
-  const ws = new WebSocket(`ws://localhost:3001/ws?conversation_id=${conversationId}`)
-  ws.onopen = function () {
-    console.log("Connected")
-  }
+  useEffect(() => {
+    if (!ws || (conversationId && ws?.url.includes(conversationId))) {
+      setWs(new WebSocket(`ws://localhost:3001/ws?conversation_id=${conversationId}`))
+    }
+    return () => {
+      ws?.close()
+    }
+  }, [conversationId])
+
+  console.log("ws:", ws)
 
   return { ws, userId, conversationId }
 }

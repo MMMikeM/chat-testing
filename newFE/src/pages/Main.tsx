@@ -1,18 +1,21 @@
 import { FormEvent, useState } from "react"
 import { Box, Button, Flex, FormControl, Input, Spacer, Text } from "@chakra-ui/react"
-import useWebsocket from "../hooks/useWebsocket"
+import useWebsocket from "@/hooks/useWebsocket"
 
 type Messages = {
-  id: number
   body: string
-  from_user_id: number
-  conversation_id: number
+  conversation_id: string
+  created_at: string
+  from_user_id: string
+  uuid: string
 }
 
 const Main = () => {
   const [messages, setMessages] = useState<Messages[]>([])
   const [messageField, setMessageField] = useState("")
   const { userId, conversationId, ws } = useWebsocket()
+
+  if (ws === undefined) return <>Loading</>
 
   const copyConversationId = () => {
     if (conversationId) {
@@ -21,18 +24,14 @@ const Main = () => {
   }
 
   ws.onmessage = (event) => {
-    const currentMessages = [...messages, JSON.parse(event.data)]
-    if (currentMessages.length > 20) {
-      currentMessages.shift()
-    }
-    setMessages(currentMessages)
+    setMessages((m) => [...m, JSON.parse(event.data)])
   }
 
-  const sendMessage = (e: FormEvent<HTMLFormElement> | undefined) => {
-    e?.preventDefault()
-    if (messageField.length > 0) {
+  const sendMessage = (e: FormEvent<HTMLFormElement>, message: string) => {
+    e.preventDefault()
+    if (message.length > 0) {
       const msg = {
-        body: messageField,
+        body: message,
         from_user_id: userId,
         conversation_id: conversationId,
       }
@@ -44,26 +43,14 @@ const Main = () => {
   return (
     <>
       <h1>Main</h1>
-      {messages.length > 0 ? (
-        <Box mt={4}>
-          {messages.map((message) => (
-            <p key={message.id}>
-              {message.from_user_id}: {message.body}
-            </p>
-          ))}
-        </Box>
-      ) : (
-        <Box mt={4}>
-          <Text colorScheme="gray">No messages exist yet...</Text>
-        </Box>
-      )}
+
       <Flex mt={2}>
         <Spacer />
         <Button onClick={() => copyConversationId()} marginBottom="4">
           Copy conversation ID
         </Button>
       </Flex>
-      <form onSubmit={sendMessage}>
+      <form onSubmit={(e) => sendMessage(e, messageField)}>
         <FormControl mt={4}>
           <Input
             type="text"
@@ -79,6 +66,19 @@ const Main = () => {
           </Button>
         </Flex>
       </form>
+      {messages.length > 0 ? (
+        <Box mt={4}>
+          {messages.map((message) => (
+            <p key={message.uuid}>
+              {message.from_user_id}: {message.body}
+            </p>
+          ))}
+        </Box>
+      ) : (
+        <Box mt={4}>
+          <Text colorScheme="gray">No messages exist yet...</Text>
+        </Box>
+      )}
     </>
   )
 }
