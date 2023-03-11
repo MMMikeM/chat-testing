@@ -1,27 +1,22 @@
-import { useState } from "react";
-import { Box, Button, FormControl, Input } from "@chakra-ui/react";
-import { createConversation } from "../api/conversation";
-import useUpdateUrl from "../hooks/useUpdateUrl";
+import { useState } from "react"
+import { Box, Button, FormControl, Input } from "@chakra-ui/react"
+import { createConversation } from "../api/conversation"
+import useUpdateUrl from "../hooks/useUpdateUrl"
 
-
-const ConversationForm = ({conversationId}: {
-  conversationId: number| null;
-}) => {
-  const [input, setInput] = useState<string>("");
-  const updateUrl = useUpdateUrl({ conversationId})
+const ConversationForm = ({ conversationId }: { conversationId: number | null }) => {
+  const [input, setInput] = useState("")
+  const updateUrl = useUpdateUrl({ conversationId })
 
   const newConversation = async () => {
-    const conversation = await createConversation();
+    const conversation = await createConversation()
     if (conversation?.id) {
-      updateUrl({ newConversationId: conversation.id });
+      updateUrl({ newConversationId: conversation.id })
     }
-  };
+  }
 
   const joinConversation = () => {
-    if (conversationId) {
-      updateUrl({ newConversationId: input });
-    }
-  };
+    updateUrl({ newConversationId: input })
+  }
 
   return (
     <Box mt={4} p={4}>
@@ -32,10 +27,7 @@ const ConversationForm = ({conversationId}: {
           type="number"
           onChange={(event) => setInput(event.target.value)}
           key="conversationId"
-          onKeyPress={(event) =>
-            event.key === "Enter"
-              ? updateUrl({ newConversationId: input })
-              : null}
+          onKeyPress={(event) => (event.key === "Enter" ? updateUrl({ newConversationId: input }) : null)}
           autoFocus
         />
       </FormControl>
@@ -46,7 +38,7 @@ const ConversationForm = ({conversationId}: {
         Create conversation
       </Button>
     </Box>
-  );
-};
+  )
+}
 
-export default ConversationForm;
+export default ConversationForm
