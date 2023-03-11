@@ -1,22 +1,20 @@
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useParams } from "react-router-dom"
 
 export type UpdateURLArgs = {
-  newUserId?: number | string
-  newConversationId?: number | string
+  newUserId?: string
+  newConversationId?: string
 }
 
-const useUpdateUrl = ({ userId, conversationId }: { userId?: number | null; conversationId?: number | null }) => {
+const useUpdateUrl = () => {
   const navigate = useNavigate()
+  const params = useParams()
+
+  const { userId, conversationId } = params
 
   const updateUrl = ({ newUserId, newConversationId }: UpdateURLArgs) => {
-    const newParams = new URLSearchParams(window.location.search)
-    if (userId !== null && newUserId) {
-      newParams.set("userId", newUserId.toString())
-    }
-    if (conversationId !== null && newConversationId) {
-      newParams.set("conversationId", newConversationId.toString())
-    }
-    navigate(`/?${newParams.toString()}`)
+    const url = `/${newUserId ?? userId}/${newConversationId ?? conversationId ?? ""}`
+
+    navigate(url)
   }
   return updateUrl
 }

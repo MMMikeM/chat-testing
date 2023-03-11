@@ -1,6 +1,6 @@
-import { useState } from "react"
+import { FormEvent, useState } from "react"
 import { Box, Button, Flex, FormControl, Input, Spacer, Text } from "@chakra-ui/react"
-import useWebsocket from "../../../hooks/useWebsocket"
+import useWebsocket from "../hooks/useWebsocket"
 
 type Messages = {
   id: number
@@ -28,7 +28,8 @@ const Main = () => {
     setMessages(currentMessages)
   }
 
-  const sendMessage = () => {
+  const sendMessage = (e: FormEvent<HTMLFormElement> | undefined) => {
+    e?.preventDefault()
     if (messageField.length > 0) {
       const msg = {
         body: messageField,
@@ -42,6 +43,7 @@ const Main = () => {
 
   return (
     <>
+      <h1>Main</h1>
       {messages.length > 0 ? (
         <Box mt={4}>
           {messages.map((message) => (
@@ -55,7 +57,13 @@ const Main = () => {
           <Text colorScheme="gray">No messages exist yet...</Text>
         </Box>
       )}
-      <form onSubmit={() => sendMessage()}>
+      <Flex mt={2}>
+        <Spacer />
+        <Button onClick={() => copyConversationId()} marginBottom="4">
+          Copy conversation ID
+        </Button>
+      </Flex>
+      <form onSubmit={sendMessage}>
         <FormControl mt={4}>
           <Input
             type="text"
@@ -64,14 +72,13 @@ const Main = () => {
             onChange={(e) => setMessageField(e.target.value)}
           />
         </FormControl>
+        <Flex mt={2}>
+          <Spacer />
+          <Button colorScheme="purple" type="submit">
+            Send Message
+          </Button>
+        </Flex>
       </form>
-      <Flex mt={2}>
-        <Button onClick={() => copyConversationId()}>Copy conversation ID</Button>
-        <Spacer />
-        <Button colorScheme="purple" onClick={() => sendMessage()}>
-          Send Message
-        </Button>
-      </Flex>
     </>
   )
 }

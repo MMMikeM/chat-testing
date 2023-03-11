@@ -2,17 +2,17 @@ import { useState } from "react"
 import { Box, Button, FormControl, Input } from "@chakra-ui/react"
 import { createConversation } from "@/api/conversation"
 import useUpdateUrl from "@/hooks/useUpdateUrl"
-import useWebSocket from "@/hooks/useWebsocket"
 
 const ConversationForm = () => {
   const [input, setInput] = useState("")
-  const { conversationId } = useWebSocket()
-  const updateUrl = useUpdateUrl({ conversationId })
+  const updateUrl = useUpdateUrl()
 
   const newConversation = async () => {
     const conversation = await createConversation()
-    if (conversation?.id) {
-      updateUrl({ newConversationId: conversation.id })
+    console.log("conversation:", conversation)
+
+    if (conversation?.ID !== undefined) {
+      updateUrl({ newConversationId: conversation.ID.toString() })
     }
   }
 
@@ -22,6 +22,7 @@ const ConversationForm = () => {
 
   return (
     <Box mt={4} p={4}>
+      <h1>Conversation Form</h1>
       <FormControl>
         <Input
           placeholder="Paste conversation ID here..."

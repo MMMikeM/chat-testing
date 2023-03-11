@@ -1,5 +1,5 @@
 type Conversation = {
-  id: number
+  ID: number
   name: string
   created_at: string
   updated_at: string

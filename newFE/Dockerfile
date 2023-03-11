@@ -4,4 +4,7 @@ run npm i -g pnpm
 
 WORKDIR /app
 
+COPY package.json package.json
+
 FROM base as dev
+
