@@ -22,10 +22,10 @@ export const Main = () => {
     }
   }
 
-  if (!userId) return <UserForm userId={userId} />
+  if (!userId) return <UserForm />
 
   if (!conversationId) {
-    return <ConversationForm conversationId={conversationId} />
+    return <ConversationForm />
   }
 
   ws.onmessage = function (event) {

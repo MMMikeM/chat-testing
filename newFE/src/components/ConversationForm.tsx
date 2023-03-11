@@ -2,9 +2,11 @@ import { useState } from "react"
 import { Box, Button, FormControl, Input } from "@chakra-ui/react"
 import { createConversation } from "../api/conversation"
 import useUpdateUrl from "../hooks/useUpdateUrl"
+import useWebSocket from "../hooks/useWebsocket"
 
-const ConversationForm = ({ conversationId }: { conversationId: number | null }) => {
+const ConversationForm = () => {
   const [input, setInput] = useState("")
+  const { conversationId } = useWebSocket()
   const updateUrl = useUpdateUrl({ conversationId })
 
   const newConversation = async () => {

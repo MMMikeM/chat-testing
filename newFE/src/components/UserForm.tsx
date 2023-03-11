@@ -2,9 +2,11 @@ import { useState } from "react"
 import { Box, Button, FormControl, Input } from "@chakra-ui/react"
 import { createUser } from "../api/user"
 import useUpdateUrl from "../hooks/useUpdateUrl"
+import useWebSocket from "../hooks/useWebsocket"
 
-const UserForm = ({ userId }: { userId: number | null }) => {
+const UserForm = () => {
   const [userName, setUserName] = useState("")
+  const { userId } = useWebSocket()
   const updateUrl = useUpdateUrl({ userId })
 
   const newUserId = async () => {
