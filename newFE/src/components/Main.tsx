@@ -24,11 +24,9 @@ export const Main = () => {
 
   if (!userId) return <UserForm />
 
-  if (!conversationId) {
-    return <ConversationForm />
-  }
+  if (!conversationId) return <ConversationForm />
 
-  ws.onmessage = function (event) {
+  ws.onmessage = (event) => {
     const currentMessages = [...messages, JSON.parse(event.data)]
     if (currentMessages.length > 20) {
       currentMessages.shift()
@@ -49,7 +47,7 @@ export const Main = () => {
   }
 
   return (
-    <div>
+    <>
       {messages.length > 0 ? (
         <Box mt={4}>
           {messages.map((message) => (
@@ -80,6 +78,6 @@ export const Main = () => {
           Send Message
         </Button>
       </Flex>
-    </div>
+    </>
   )
 }
